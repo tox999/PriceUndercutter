@@ -1,0 +1,85 @@
+﻿<Window x:Class="PriceUndercutter.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PriceUndercutter"
+        mc:Ignorable="d"
+        Title="Market Undercutter for EVE" Height="550" Width="600"
+        >
+    <Grid>
+        <StackPanel Margin="15,0,0,0">
+            <Label FontWeight="Bold" FontSize="40">Price Undercutter for EVE</Label>
+            <TextBlock Margin="5"><Run Text="App is monitoring your exported market data files and"/><Run Language="cs-cz" Text=" "/><Run Text="copies the "/><Run Text="top"/><Run Text=" price to your"/><Run Text=" system clipboard,"/><LineBreak/><Run Text="depending on type of orders you set you are modifying."/><LineBreak/><Run/>
+            </TextBlock>
+            <TextBlock Margin="5" FontSize="10"> Default MarketLogs directory is C:\Users\%USERNAME%\Documents\EVE\logs\Marketlogs </TextBlock>
+
+            <WrapPanel Margin="0,5,0,0">
+                <StackPanel>
+                    <StackPanel>
+                        <WrapPanel>
+                            <Button Margin="0,0,5,0" Padding="5" Name="SelectFolderPath" Click="SelectFolderPath_Click" HorizontalAlignment="Left">Select custom folder path ...</Button>
+                            <Button Margin="0,0,5,0" Padding="5" Name="DefaultFolderPathButton" HorizontalAlignment="Right" Click="DefaultFolderPathButton_Click">Set default folder path</Button>
+                        </WrapPanel>
+                    </StackPanel>
+                    
+                    <StackPanel>
+                        <WrapPanel>
+                            <Label FontWeight="Bold">Market logs folder:</Label>
+                            <Label Name="CurrentFolderLabel" >...</Label>
+                        </WrapPanel>
+                        <WrapPanel>
+                            <Label FontWeight="Bold">File:</Label>
+                            <Label Foreground="DarkGray"  Name="CurrentFileLabel" >...</Label>
+                        </WrapPanel>
+                    </StackPanel>
+                    
+                </StackPanel>
+
+            </WrapPanel>
+            
+            <StackPanel Margin="0,5,0,0">
+                <Label FontWeight="Bold">What are you modifying?</Label>
+                <RadioButton IsChecked="True" Name="sell" Click="sell_Click">
+                    <WrapPanel>
+                        <!--<Image Source="/" Width="16" Height="16" Margin="0,0,5,0" />-->
+                        <TextBlock Foreground="DeepSkyBlue"  Text="Sell Orders" />
+                    </WrapPanel>
+                </RadioButton>
+                <RadioButton Name="buy" Click="buy_Click">
+                    <WrapPanel>
+                        <!--<Image Source="/" Width="16" Height="16" Margin="0,0,5,0" />-->
+                        <TextBlock Foreground="DarkGreen" Text="Buy Orders" />
+                    </WrapPanel>
+                </RadioButton>
+            </StackPanel>
+
+
+            
+
+            <StackPanel Margin="0,5,0,0">
+                <WrapPanel>
+                    <Label FontWeight="Bold">Top Price:</Label>
+                    <TextBox Foreground="Blue" Name="TopPriceTextArea" HorizontalAlignment="Center" VerticalAlignment="Center"> - </TextBox>
+                    <Label >ISK</Label>
+                </WrapPanel>
+            <Button Name="ForceReprocessButton" Margin="0, 10, 0, 0" Padding="5" HorizontalAlignment="Left" VerticalAlignment="Center" Click="ForceReprocessButton_Click">Get top price</Button>
+                <WrapPanel>
+                    <Label FontWeight="Bold">Status:</Label>
+                    <Label Name="StatusLabel"></Label>
+                </WrapPanel>
+                <WrapPanel>
+                    <Label FontWeight="Bold">Errors:</Label>
+                    <Label Foreground="Red"  Name="ErrorLabel"></Label>
+                </WrapPanel>
+            </StackPanel>
+            
+            <Label Margin="0,5,0,0" FontStyle="Italic" FontSize="11">created by: Toxie Feine (ISK donations welcome)</Label>
+            <WrapPanel>
+                <Label FontSize="9">Version</Label>
+                <Label FontSize="9" Name="VersionLabel">-</Label>
+            </WrapPanel>
+            <TextBlock Margin="5" FontSize="9" FontStyle="Italic" ><Run Text="Warnings: Use at your own risk, author does not take any responsibility for product usage. App is changing your system clipboard. "></Run></TextBlock>
+        </StackPanel>
+    </Grid>
+</Window>
