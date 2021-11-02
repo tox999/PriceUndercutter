@@ -37,8 +37,17 @@
                 </StackPanel>
 
             </WrapPanel>
-            
-            <StackPanel Margin="0,5,0,0">
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,5,0,0">
                 <Label FontWeight="Bold">What are you modifying?</Label>
                 <RadioButton IsChecked="True" Name="sell" Click="sell_Click">
                     <WrapPanel>
@@ -54,8 +63,22 @@
                 </RadioButton>
             </StackPanel>
 
+                <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,5,0,0">
+                    <Label FontWeight="Bold">Filters</Label>
+                    
+                    <WrapPanel>
+                        <Label>Jumps</Label>
+                        <TextBox x:Name="JumpsMinFilterTextBox" VerticalAlignment="Center" TextChanged="JumpsMinFilterTextBox_TextChanged">-</TextBox>
+                        <Label>-</Label>
+                        <TextBox x:Name="JumpsMaxFilterTextBox" VerticalAlignment="Center" TextChanged="JumpsMaxFilterTextBox_TextChanged">-</TextBox>
+                    </WrapPanel>
 
-            
+                </StackPanel>
+
+            </Grid>
+
+
+
 
             <StackPanel Margin="0,5,0,0">
                 <WrapPanel>

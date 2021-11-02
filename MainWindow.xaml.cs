@@ -28,24 +28,62 @@ namespace PriceUndercutter
         Buy, Sell
     }
 
+    public struct IntRange
+    {
+        private int min, max;
+        public IntRange(int min, int max)
+        {
+            this.min = min;
+            this.max = max;
+        }
+
+        public int Min
+        {
+            get { return min; }
+            set
+            {
+                if (value > max)
+                    max = value;
+                min = value;
+            }
+        }
+        public int Max
+        {
+            get { return max; }
+            set
+            {
+                if (value < min)
+                    min = value;
+                max = value;
+
+            }
+        }
+
+        public override string ToString() => $"({Min} - {Max})";
+    }
+
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
         const string DefaultFileFilter = "*.txt";
-        
+        const int DefaultJumpsFilter = 0;
+
         FileSystemWatcher FolderWatcher;
 
         static readonly object locker = new object();
         DateTime lastRead = DateTime.MinValue;
 
-        
+
         private OrderType CurrentOrderType = OrderType.Sell;
         string PathToMarketLogs = "";
         string NewestMarketLogPath = "";
         double TopPrice = 0;
 
+        IntRange JumpsFilter = new IntRange(min: DefaultJumpsFilter, max: DefaultJumpsFilter);
+        bool CanChangeFilters = false;
 
         public void UpdateOrderType()
         {
@@ -68,7 +106,7 @@ namespace PriceUndercutter
         {
             if (ex != null)
             {
-                SafeUpdateLabelText($"Message: {ex.Message}; Stacktrace: {ex.StackTrace}",  ErrorLabel);
+                SafeUpdateLabelText($"Message: {ex.Message}; Stacktrace: {ex.StackTrace}", ErrorLabel);
             }
         }
 
@@ -93,8 +131,8 @@ namespace PriceUndercutter
             var directoryInfo = new System.IO.DirectoryInfo(directoryPath);
             var file = directoryInfo.GetFiles(pattern)
                          .OrderByDescending(f => f.LastWriteTime);
-                         
-            
+
+
             return (file.Count() > 0) ? file.First().FullName : "";
         }
 
@@ -111,7 +149,9 @@ namespace PriceUndercutter
         double SearchForTopPrice(IEnumerable<MarketData> marketData)
         {
             bool buy = CurrentOrderType == OrderType.Buy;
-            var filteredOrders = marketData.Where(order => order.Bid == buy);
+            var filteredOrders = marketData.Where(order => order.Bid == buy &&
+            order.Jumps >= JumpsFilter.Min && order.Jumps <= JumpsFilter.Max);
+
             double newPrice = 0;
             if (buy)
                 newPrice = filteredOrders.Max(order => order.Price);
@@ -121,15 +161,44 @@ namespace PriceUndercutter
             return newPrice;
         }
 
-        public void Reprocess()
+        public void SafeReprocess(string filePath)
+        {
+            try
+            {
+                while (IsFileLocked(filePath))
+                {
+                    Thread.Sleep(100);
+                }
+                lock (locker)
+                {
+                    Reprocess(filePath);
+
+                    DateTime lastWriteTime = File.GetLastWriteTime(filePath);
+                    if (lastWriteTime != lastRead)
+                    {
+                        lastRead = lastWriteTime;
+                    }
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                SafeUpdateLabelText("File not found ", ErrorLabel);
+            }
+            catch (InvalidOperationException){
+                SafeUpdateLabelText("No orders for selected filters.", ErrorLabel); 
+            }
+            catch (Exception ex)
+            {
+                SafeUpdateLabelText(ex.Message, ErrorLabel);
+            }
+        }
+
+        public void Reprocess(string newestMarketLogPath)
         {
             SafeUpdateLabelText("", ErrorLabel);
             SafeUpdateLabelText("Reprocessing starting...", StatusLabel);
 
-            NewestMarketLogPath = NewestFilePathInDirectory(PathToMarketLogs);
-
-            // validate log path
-            if (string.IsNullOrEmpty(NewestMarketLogPath))
+            if (string.IsNullOrEmpty(newestMarketLogPath))
             {
                 PrintException(new Exception("There is no market log to be processed, check if you selected correct directory."));
                 SafeUpdateLabelText("Error", StatusLabel);
@@ -138,7 +207,7 @@ namespace PriceUndercutter
             else
             {
                 SafeUpdateLabelText("Processing market data...", StatusLabel);
-                TopPrice = TopPriceFromCsv(NewestMarketLogPath);
+                TopPrice = TopPriceFromCsv(newestMarketLogPath);
                 ModifyClipBoardFromSTAThread(TopPrice.ToString());
                 SafeUpdateLabelText("Top price pasted to clippboard!", StatusLabel);
             }
@@ -148,7 +217,8 @@ namespace PriceUndercutter
 
         void ModifyClipBoardFromSTAThread(string text)
         {
-            Thread t = new Thread((ThreadStart)(() => {
+            Thread t = new Thread((ThreadStart)(() =>
+            {
                 System.Windows.Clipboard.SetData(System.Windows.DataFormats.Text, text);
             }));
 
@@ -161,16 +231,16 @@ namespace PriceUndercutter
         void UpdateUI()
         {
             SafeUpdateLabelText(PathToMarketLogs.ToString(), CurrentFolderLabel);
-            
+
             string currentFileLabelContent = (!string.IsNullOrEmpty(NewestMarketLogPath)) ?
                 new FileInfo(NewestMarketLogPath).Name.ToString() : " Invalid directory selected ";
             SafeUpdateLabelText(currentFileLabelContent, CurrentFileLabel);
-            
+
             Dispatcher.Invoke(DispatcherPriority.Normal, new Action(delegate ()
             {
                 TopPriceTextArea.Text = $"{TopPrice:N}";
             }));
-            
+
         }
 
         void SafeUpdateLabelText(string text, System.Windows.Controls.Label labelToUpdate)
@@ -185,9 +255,11 @@ namespace PriceUndercutter
         public MainWindow()
         {
             InitializeComponent();
-            VersionLabel.Content = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
+            VersionLabel.Content = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             UpdateOrderType();
+            JumpsMinFilterTextBox.Text = DefaultJumpsFilter.ToString();
+            JumpsMaxFilterTextBox.Text = DefaultJumpsFilter.ToString();
 
             // Default folder = C:\Users\%USERNAME%\Documents\EVE\logs\Marketlogs
             PathToMarketLogs = DefaultPathToMarketLogs();
@@ -195,8 +267,10 @@ namespace PriceUndercutter
             FolderWatcher = StartFolderWatcher(PathToMarketLogs);
 
             StatusLabel.Content = "-";
-            Reprocess();
+            NewestMarketLogPath = NewestFilePathInDirectory(PathToMarketLogs);
+            Reprocess(NewestMarketLogPath);
 
+            CanChangeFilters = true;
             // TODO: Bonus objectives:
             // allow modification of MarketLogs folder location
             // add some graphical shit
@@ -205,31 +279,7 @@ namespace PriceUndercutter
 
         protected void OnCreated(object sender, System.IO.FileSystemEventArgs e)
         {
-            try
-            {
-                while (IsFileLocked(e.FullPath))
-                {
-                    Thread.Sleep(100);
-                }
-                lock (locker)
-                {
-                    Reprocess();
-
-                    DateTime lastWriteTime = File.GetLastWriteTime(e.FullPath);
-                    if (lastWriteTime != lastRead)
-                    {
-                        lastRead = lastWriteTime;
-                    }
-                }
-            }
-            catch (FileNotFoundException)
-            {
-                SafeUpdateLabelText("File not found ", ErrorLabel);
-            }
-            catch (Exception ex)
-            {
-                SafeUpdateLabelText("File: \"" + e.FullPath + "\"\n\r ERROR processing file (" + ex.Message + ")", ErrorLabel);
-            }
+            SafeReprocess(e.FullPath);
         }
 
         private static bool IsFileLocked(string file)
@@ -267,13 +317,16 @@ namespace PriceUndercutter
         private void sell_Click(object sender, RoutedEventArgs e)
         {
             UpdateOrderType();
-            Reprocess();
+
+            NewestMarketLogPath = NewestFilePathInDirectory(PathToMarketLogs);
+            SafeReprocess(NewestMarketLogPath);
         }
 
         private void buy_Click(object sender, RoutedEventArgs e)
         {
             UpdateOrderType();
-            Reprocess();
+            NewestMarketLogPath = NewestFilePathInDirectory(PathToMarketLogs);
+            SafeReprocess(NewestMarketLogPath);
         }
 
         private void SelectFolderPath_Click(object sender, RoutedEventArgs e)
@@ -283,19 +336,82 @@ namespace PriceUndercutter
             {
                 PathToMarketLogs = dialog.SelectedPath;
                 FolderWatcher.Path = PathToMarketLogs;
-                Reprocess();
+                NewestMarketLogPath = NewestFilePathInDirectory(PathToMarketLogs);
+                SafeReprocess(NewestMarketLogPath);
             }
         }
 
         private void ForceReprocessButton_Click(object sender, RoutedEventArgs e)
         {
-            Reprocess();
+            NewestMarketLogPath = NewestFilePathInDirectory(PathToMarketLogs);
+            SafeReprocess(NewestMarketLogPath);
         }
 
         private void DefaultFolderPathButton_Click(object sender, RoutedEventArgs e)
         {
             PathToMarketLogs = DefaultPathToMarketLogs();
-            Reprocess();
+            NewestMarketLogPath = NewestFilePathInDirectory(PathToMarketLogs);
+            SafeReprocess(NewestMarketLogPath);
+        }
+
+        int? TryToGetNewValueFromTextBox(object senderTextBox)
+        {
+            int newValue = 0;
+            if (int.TryParse(((System.Windows.Controls.TextBox)senderTextBox).Text.ToString(), out newValue))
+                return newValue;
+
+            return null;
+        }
+
+        //IntRange GetValidatedRange(IntRange newRange, IntRange oldRange)
+        //{
+
+        //}
+
+        private void JumpsMinFilterTextBox_TextChanged(object sender, TextChangedEventArgs args)
+        {
+            if (!CanChangeFilters)
+                return;
+
+            var newValue = TryToGetNewValueFromTextBox(sender);
+            if (newValue == null)
+                return;
+
+            var oldMax = JumpsFilter.Max;
+            JumpsFilter.Min = (int)newValue;
+            if (oldMax != JumpsFilter.Max)
+            {
+                Dispatcher.Invoke(DispatcherPriority.Normal, new Action(delegate ()
+                {
+                    JumpsMaxFilterTextBox.Text = JumpsFilter.Max.ToString();
+                }));
+            }
+
+            NewestMarketLogPath = NewestFilePathInDirectory(PathToMarketLogs);
+            SafeReprocess(NewestMarketLogPath);
+        }
+
+        private void JumpsMaxFilterTextBox_TextChanged(object sender, TextChangedEventArgs args)
+        {
+            if (!CanChangeFilters)
+                return;
+
+            var newValue = TryToGetNewValueFromTextBox(sender);
+            if (newValue == null)
+                return;
+
+            var oldMin = JumpsFilter.Min;
+            JumpsFilter.Max = (int)newValue;
+            if (oldMin != JumpsFilter.Min)
+            {
+                Dispatcher.Invoke(DispatcherPriority.Normal, new Action(delegate ()
+                {
+                    JumpsMinFilterTextBox.Text = JumpsFilter.Max.ToString();
+                }));
+            }
+
+            NewestMarketLogPath = NewestFilePathInDirectory(PathToMarketLogs);
+            SafeReprocess(NewestMarketLogPath);
         }
     }
 }
