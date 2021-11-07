@@ -1,4 +1,6 @@
 # Price Undercutter
+Disclaimer: This is work in progress and unpolished, quickly made to be quickly used - not a fancy beutiful code :D
+
 
 How it works: When you start the app it automatically monitoring your C:\users\%username%\Documents\EVE\logs\Marketlogs
 checking for a most recent file. App loads the exported file and find the top price for the selected order type (sell/buy) and copies that price to your system clipboard.
@@ -11,4 +13,5 @@ How to use it:
 4. Now you have top price in your clipboard so, you can insert the price with "ctrl+v" anywhere you want.
 5. You can scroll up/down to modify the top price in your new order to undercut your competitors. (edited)
 
-How it can be updated
+What could be improved and added:
+
