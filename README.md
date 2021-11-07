@@ -1,6 +1,6 @@
 # Price Undercutter
 
-How it works: When you start the app it automatically monitoring your C:\users%username%\Documents\EVE\logs\Marketlogs
+How it works: When you start the app it automatically monitoring your C:\users\%username%\Documents\EVE\logs\Marketlogs
 checking for a most recent file. App loads the exported file and find the top price for the selected order type (sell/buy) and copies that price to your system clipboard.
 Export files are generated whenever you click "export to file" ingame regional market window. Also there is one filter which is jumps which filters orders according to that.
 
