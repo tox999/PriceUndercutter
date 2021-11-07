@@ -14,4 +14,6 @@ How to use it:
 5. You can scroll up/down to modify the top price in your new order to undercut your competitors. (edited)
 
 What could be improved and added:
-
+* Add some graphics.
+* Show item image you are getting top price for (from name of the log file using EVE api).
+* Add actual undercutting by implementing the ticks like in-game depending on the price.
