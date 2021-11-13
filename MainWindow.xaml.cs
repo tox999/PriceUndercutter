@@ -152,8 +152,8 @@ namespace PriceUndercutter
             bool buy = CurrentOrderType == OrderType.Buy;
             var filteredOrders = marketData.Where(order => order.Bid == buy &&
             order.Jumps >= JumpsFilter.Min && order.Jumps <= JumpsFilter.Max);
-
-            if (filteredOrders.Count() < 1)
+            
+            if (!filteredOrders.Any())
                 throw new Exception("There are no orders for selected filters. Price cannot be fetched.");
 
             if (buy)
@@ -274,6 +274,7 @@ namespace PriceUndercutter
 
             StatusLabel.Content = "-";
             NewestMarketLogPath = NewestFilePathInDirectory(PathToMarketLogs);
+            
             SafeReprocess(NewestMarketLogPath);
 
             CanChangeFilters = true;
@@ -368,11 +369,6 @@ namespace PriceUndercutter
 
             return null;
         }
-
-        //IntRange GetValidatedRange(IntRange newRange, IntRange oldRange)
-        //{
-
-        //}
 
         private void JumpsMinFilterTextBox_TextChanged(object sender, TextChangedEventArgs args)
         {
