@@ -1,6 +1,8 @@
 # Price Undercutter
+Disclaimer: This is work in progress and unpolished, quickly made to be quickly used - not a fancy beutiful code :D
 
-How it works: When you start the app it automatically monitoring your C:\users%username%\Documents\EVE\logs\Marketlogs
+
+How it works: When you start the app it automatically monitoring your C:\users\%username%\Documents\EVE\logs\Marketlogs
 checking for a most recent file. App loads the exported file and find the top price for the selected order type (sell/buy) and copies that price to your system clipboard.
 Export files are generated whenever you click "export to file" ingame regional market window. Also there is one filter which is jumps which filters orders according to that.
 
@@ -11,4 +13,7 @@ How to use it:
 4. Now you have top price in your clipboard so, you can insert the price with "ctrl+v" anywhere you want.
 5. You can scroll up/down to modify the top price in your new order to undercut your competitors. (edited)
 
-How it can be updated
+What could be improved and added:
+* Add some graphics.
+* Show item image you are getting top price for (from name of the log file using EVE api).
+* Add actual undercutting by implementing the ticks like in-game depending on the price.
