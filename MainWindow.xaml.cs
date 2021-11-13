@@ -148,11 +148,14 @@ namespace PriceUndercutter
 
         double SearchForTopPrice(IEnumerable<MarketData> marketData)
         {
+            double newPrice = 0;
             bool buy = CurrentOrderType == OrderType.Buy;
             var filteredOrders = marketData.Where(order => order.Bid == buy &&
             order.Jumps >= JumpsFilter.Min && order.Jumps <= JumpsFilter.Max);
 
-            double newPrice = 0;
+            if (filteredOrders.Count() < 1)
+                return newPrice;
+
             if (buy)
                 newPrice = filteredOrders.Max(order => order.Price);
             else
