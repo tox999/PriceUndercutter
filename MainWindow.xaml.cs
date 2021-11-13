@@ -154,7 +154,7 @@ namespace PriceUndercutter
             order.Jumps >= JumpsFilter.Min && order.Jumps <= JumpsFilter.Max);
 
             if (filteredOrders.Count() < 1)
-                return newPrice;
+                throw new Exception("There are no orders for selected filters. Price cannot be fetched.");
 
             if (buy)
                 newPrice = filteredOrders.Max(order => order.Price);
@@ -185,13 +185,16 @@ namespace PriceUndercutter
             }
             catch (FileNotFoundException)
             {
+                SafeUpdateLabelText("Error", StatusLabel);
                 SafeUpdateLabelText("File not found ", ErrorLabel);
             }
             catch (InvalidOperationException){
+                SafeUpdateLabelText("Error", StatusLabel);
                 SafeUpdateLabelText("No orders for selected filters.", ErrorLabel); 
             }
             catch (Exception ex)
             {
+                SafeUpdateLabelText("Error", StatusLabel);
                 SafeUpdateLabelText(ex.Message, ErrorLabel);
             }
         }
@@ -209,7 +212,7 @@ namespace PriceUndercutter
             }
             else
             {
-                SafeUpdateLabelText("Processing market data...", StatusLabel);
+                SafeUpdateLabelText("Processing market data...", StatusLabel);    
                 TopPrice = TopPriceFromCsv(newestMarketLogPath);
                 ModifyClipBoardFromSTAThread(TopPrice.ToString());
                 SafeUpdateLabelText("Top price pasted to clippboard!", StatusLabel);
@@ -271,7 +274,7 @@ namespace PriceUndercutter
 
             StatusLabel.Content = "-";
             NewestMarketLogPath = NewestFilePathInDirectory(PathToMarketLogs);
-            Reprocess(NewestMarketLogPath);
+            SafeReprocess(NewestMarketLogPath);
 
             CanChangeFilters = true;
             // TODO: Bonus objectives:
