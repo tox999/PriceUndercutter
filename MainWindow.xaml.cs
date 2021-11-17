@@ -150,16 +150,21 @@ namespace PriceUndercutter
         {
             double newPrice = 0;
             bool buy = CurrentOrderType == OrderType.Buy;
+
             var filteredOrders = marketData.Where(order => order.Bid == buy &&
             order.Jumps >= JumpsFilter.Min && order.Jumps <= JumpsFilter.Max);
-            
-            if (!filteredOrders.Any())
-                throw new Exception("There are no orders for selected filters. Price cannot be fetched.");
 
-            if (buy)
-                newPrice = filteredOrders.Max(order => order.Price);
-            else
-                newPrice = filteredOrders.Min(order => order.Price);
+            try
+            {
+                if (buy)
+                    newPrice = filteredOrders.Max(order => order.Price);
+                else
+                    newPrice = filteredOrders.Min(order => order.Price);
+            }
+            catch (InvalidOperationException)
+            {
+                throw new Exception("There are no orders for selected filters. Price cannot be fetched.");
+            }
 
             return newPrice;
         }
